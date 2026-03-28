@@ -26,8 +26,17 @@ export function ChatHeaderActions({ chatName, isGroup, roomId }: ChatHeaderActio
     }
   }, [socket, roomId]);
 
-  const handleStartCall = () => {
+  const handleStartCall = async () => {
     if (status !== "idle" || !socket || !userId) return;
+    
+    // FETCH MIC HERE immediately upon starting the call
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      alert("Failed to access microphone. Please allow permissions.");
+      return;
+    }
     
     // 1. Tell local state we are calling
     startOutgoingCall({
@@ -36,7 +45,7 @@ export function ChatHeaderActions({ chatName, isGroup, roomId }: ChatHeaderActio
       roomId,
       callerId: userId,
       callerName,
-    });
+    }, stream);
     
     // 2. Tell the server to broadcast the ring
     socket.emit("start_call", {

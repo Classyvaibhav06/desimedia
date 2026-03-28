@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 export function GlobalCallUI() {
   const { data: session } = useSession();
   const { 
-    status, callDetails, isMuted, 
+    status, callDetails, isMuted, localStream,
     acceptCall, declineCall, endCall, toggleMute 
   } = useCallStore();
   const { socket } = useSocket();
@@ -54,17 +54,20 @@ export function GlobalCallUI() {
    * Does NOT create an offer/answer — the caller is responsible for that.
    */
   const createPeerConnection = useCallback(async (): Promise<RTCPeerConnection> => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert("Microphone access is not supported. This normally happens if you test on mobile without HTTPS. Use localhost or ngrok.");
-      throw new Error("navigator.mediaDevices is undefined");
-    }
-
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      alert("Failed to get microphone access. Please allow microphone permissions.");
-      throw err;
+    let stream = localStream;
+    
+    // Fallback if not prefetched
+    if (!stream) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Microphone access is not supported. Use HTTPS.");
+        throw new Error("navigator.mediaDevices is undefined");
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        alert("Failed to get microphone access. Please allow permissions.");
+        throw err;
+      }
     }
     
     streamRef.current = stream;
@@ -108,10 +111,19 @@ export function GlobalCallUI() {
     return pc;
   }, []);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!callDetails || !socket) return;
+    
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      alert("Failed to access microphone. Cannot answer call.");
+      return;
+    }
+
     socket.emit("call_accepted", { roomId: callDetails.roomId, callerId: callDetails.callerId });
-    acceptCall();
+    acceptCall(stream);
   };
 
   const handleDecline = () => {
@@ -186,7 +198,7 @@ export function GlobalCallUI() {
       socket.off("webrtc_answer", onAnswer);
       socket.off("webrtc_ice_candidate", onIceCandidate);
     };
-  }, [callDetails, createPeerConnection, socket]);
+  }, [callDetails, createPeerConnection, socket, localStream]);
 
   // Handle local state changes
   useEffect(() => {
@@ -234,7 +246,7 @@ export function GlobalCallUI() {
         timerRef.current = undefined;
       }
     };
-  }, [callDetails, cleanupWebRTC, createPeerConnection, endCall, socket, status, userId]);
+  }, [callDetails, cleanupWebRTC, createPeerConnection, endCall, socket, status, userId, localStream]);
 
   // Handle local mic mute when store isMuted changes
   useEffect(() => {

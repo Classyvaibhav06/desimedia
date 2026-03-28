@@ -14,10 +14,11 @@ interface CallStore {
   status: CallStatus;
   callDetails: CallDetails | null;
   isMuted: boolean;
+  localStream: MediaStream | null;
   
-  startOutgoingCall: (details: CallDetails) => void;
+  startOutgoingCall: (details: CallDetails, stream: MediaStream) => void;
   receiveIncomingCall: (details: CallDetails) => void;
-  acceptCall: () => void;
+  acceptCall: (stream: MediaStream) => void;
   declineCall: () => void;
   endCall: () => void;
   
@@ -33,11 +34,13 @@ export const useCallStore = create<CallStore>((set) => ({
   status: "idle",
   callDetails: null,
   isMuted: false,
+  localStream: null,
 
-  startOutgoingCall: (details) => set({
+  startOutgoingCall: (details, stream) => set({
     status: "outgoing",
     callDetails: details,
     isMuted: false,
+    localStream: stream,
   }),
 
   receiveIncomingCall: (details) => set((state) => {
@@ -47,14 +50,15 @@ export const useCallStore = create<CallStore>((set) => ({
       status: "incoming",
       callDetails: details,
       isMuted: false,
+      localStream: null,
     };
   }),
 
-  acceptCall: () => set({ status: "connected" }),
+  acceptCall: (stream) => set({ status: "connected", localStream: stream }),
   
-  declineCall: () => set({ status: "idle", callDetails: null }),
+  declineCall: () => set({ status: "idle", callDetails: null, localStream: null }),
   
-  endCall: () => set({ status: "idle", callDetails: null, isMuted: false }),
+  endCall: () => set({ status: "idle", callDetails: null, isMuted: false, localStream: null }),
 
   markCallAccepted: () => set((state) => {
     if (state.status === "outgoing") return { status: "connected" };
@@ -63,7 +67,7 @@ export const useCallStore = create<CallStore>((set) => ({
   
   markCallRejected: () => set({ status: "rejected" }),
   
-  markCallEnded: () => set({ status: "idle", callDetails: null, isMuted: false }),
+  markCallEnded: () => set({ status: "idle", callDetails: null, isMuted: false, localStream: null }),
 
   toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
 }));
