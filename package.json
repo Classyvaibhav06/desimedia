@@ -4,12 +4,13 @@
   "description": "DesiMedia collaborative chat platform",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "build:render": "npx prisma generate && npx prisma migrate deploy && next build"
   },
   "keywords": [
     "nextjs",

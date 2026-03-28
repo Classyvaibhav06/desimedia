@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { ShareMenu } from "./share-menu";
 import { MediaUploader } from "./media-uploader";
 import { GifSearcher } from "./gif-searcher";
+import { useSocket } from "@/components/providers/socket-provider";
 
 type MessageComposerProps = {
   conversationId: string;
@@ -13,6 +14,7 @@ type MessageComposerProps = {
 
 export function MessageComposer({ conversationId }: MessageComposerProps) {
   const router = useRouter();
+  const { socket } = useSocket();
   const [content, setContent] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,25 @@ export function MessageComposer({ conversationId }: MessageComposerProps) {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [content]);
+
+  // Real-time message receiver
+  useEffect(() => {
+    if (!socket) return;
+    
+    // Always make sure we're joined to the chat room for text messaging too
+    socket.emit("join_chat", conversationId);
+    
+    const handleNewMessage = (payload: { roomId: string }) => {
+      if (payload.roomId === conversationId) {
+        router.refresh(); // Fetches new messages seamlessly via Next.js RSC payload
+      }
+    };
+
+    socket.on("new_message", handleNewMessage);
+    return () => {
+      socket.off("new_message", handleNewMessage);
+    };
+  }, [socket, conversationId, router]);
 
   async function onSubmit() {
     const trimmed = content.trim();
@@ -56,6 +77,10 @@ export function MessageComposer({ conversationId }: MessageComposerProps) {
     if (response.ok) {
       setContent("");
       setMediaData(null);
+      
+      // Notify other clients in the room to refresh
+      socket?.emit("new_message", { roomId: conversationId });
+
       router.refresh(); // Refresh page to see new message
     } else {
       const data = await response.json().catch(() => null);

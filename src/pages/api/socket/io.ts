@@ -141,7 +141,11 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
         }
       });
 
-      // 6. WebRTC Signaling
+      // 6. WebRTC & Chat Signaling
+      socket.on("new_message", (payload: { roomId: string }) => {
+        console.log(`[Socket] Relaying new_message for room ${payload.roomId}`);
+        socket.to(payload.roomId).emit("new_message", payload);
+      });
       socket.on("webrtc_offer", (payload) => {
         console.log(`[Socket] Relaying webrtc_offer for room ${payload.roomId}`);
         socket.to(payload.roomId).emit("webrtc_offer", payload);

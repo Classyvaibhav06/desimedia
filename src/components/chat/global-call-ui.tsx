@@ -150,6 +150,7 @@ export function GlobalCallUI() {
         });
       } catch (err) {
         console.error("[WebRTC] Error handling offer:", err);
+        socketRef.current?.emit("end_call", { roomId: callDetailsRef.current?.roomId, callerId: callDetailsRef.current?.callerId });
         endCall(); // Clean up call if microphone access fails for receiver
       }
     };
@@ -207,6 +208,7 @@ export function GlobalCallUI() {
             socket?.emit("webrtc_offer", { roomId: callDetails.roomId, offer });
           } catch (err) {
             console.error("[WebRTC] Failed to create offer:", err);
+            socket?.emit("end_call", { roomId: callDetails.roomId, callerId: callDetails.callerId });
             endCall(); // Clean up if failed
           }
         })();
