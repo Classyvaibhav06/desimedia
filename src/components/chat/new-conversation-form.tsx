@@ -194,13 +194,20 @@ export function NewConversationForm({ currentUserId }: { currentUserId?: string 
         <div className="relative shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888]" size={16} />
           <input
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
             placeholder="Search by name or username..."
-            className="w-full bg-black border border-[#333] text-white rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+            className="w-full bg-black border border-[#333] text-white rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-white transition-colors appearance-none"
           />
           {isSearching && (
-             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#888] border-t-transparent rounded-full animate-spin" />
+             <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#888] border-t-transparent rounded-full animate-spin pointer-events-none" />
           )}
         </div>
 

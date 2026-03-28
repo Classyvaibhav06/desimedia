@@ -52,11 +52,14 @@ export default async function ChatHome() {
   return (
     <div className="flex flex-col h-full bg-black md:flex-row">
       <div className="w-full md:w-80 border-r-0 md:border-r border-[#222] flex flex-col h-full">
-        <div className="p-4 border-b border-[#222]">
+        <div className="p-4 border-b border-[#222] flex items-center justify-between">
            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
              <Inbox size={20} className="text-[#888]" />
              Inbox
            </h1>
+           <Link href="/chat/new" className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-[#111] hover:bg-[#222] border border-[#333] transition-colors text-white">
+             <MessageSquarePlus size={16} />
+           </Link>
         </div>
 
         <div className="p-4 flex flex-col gap-2 overflow-y-auto mt-2">

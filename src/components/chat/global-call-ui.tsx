@@ -54,7 +54,19 @@ export function GlobalCallUI() {
    * Does NOT create an offer/answer — the caller is responsible for that.
    */
   const createPeerConnection = useCallback(async (): Promise<RTCPeerConnection> => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Microphone access is not supported. This normally happens if you test on mobile without HTTPS. Use localhost or ngrok.");
+      throw new Error("navigator.mediaDevices is undefined");
+    }
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      alert("Failed to get microphone access. Please allow microphone permissions.");
+      throw err;
+    }
+    
     streamRef.current = stream;
 
     const pc = new RTCPeerConnection({
@@ -138,6 +150,7 @@ export function GlobalCallUI() {
         });
       } catch (err) {
         console.error("[WebRTC] Error handling offer:", err);
+        endCall(); // Clean up call if microphone access fails for receiver
       }
     };
 
@@ -194,6 +207,7 @@ export function GlobalCallUI() {
             socket?.emit("webrtc_offer", { roomId: callDetails.roomId, offer });
           } catch (err) {
             console.error("[WebRTC] Failed to create offer:", err);
+            endCall(); // Clean up if failed
           }
         })();
       }

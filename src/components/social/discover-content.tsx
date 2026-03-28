@@ -71,19 +71,29 @@ export function DiscoverContent({ initialUsers, followingIds }: Props) {
 
   return (
     <>
-      <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888]" size={18} />
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (document.activeElement instanceof HTMLElement) {
+             document.activeElement.blur();
+          }
+        }} 
+        className="relative w-full"
+      >
+        <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888] hover:text-white transition-colors cursor-pointer z-10">
+          <Search size={18} />
+        </button>
         <input
-          type="text"
+          type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search users by name or username..."
-          className="w-full bg-[#111] border border-[#222] text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-[#444] transition-colors placeholder:text-[#555]"
+          className="w-full bg-[#111] border border-[#222] text-white rounded-lg pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-[#444] transition-colors placeholder:text-[#555] appearance-none"
         />
         {isSearching && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#888] border-t-transparent rounded-full animate-spin" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#888] border-t-transparent rounded-full animate-spin pointer-events-none" />
         )}
-      </div>
+      </form>
 
       <div className="flex flex-col gap-3">
         {users.map((u) => {
