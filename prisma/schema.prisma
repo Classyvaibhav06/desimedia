@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConversationType {
+  DM
+  GROUP
+}
+
+enum ParticipantRole {
+  MEMBER
+  ADMIN
+  OWNER
+}
+
+enum RelationshipStatus {
+  FOLLOWING
+  BLOCKED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  MEME
+  SYSTEM
+}
+
+enum NotificationType {
+  MESSAGE
+  FOLLOW
+  GROUP_INVITE
+  MISSED_CALL
+}
+
+model User {
+  id              String                 @id @default(cuid())
+  email           String                 @unique
+  username        String                 @unique
+  passwordHash    String
+  displayName     String
+  avatarUrl       String?
+  bio             String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  sentMessages    Message[]              @relation("SentMessages")
+  memberships     ConversationParticipant[]
+  initiatedChats  Conversation[]         @relation("ConversationCreator")
+  followers       UserRelationship[]     @relation("FollowingRelation")
+  following       UserRelationship[]     @relation("FollowerRelation")
+  notifications   Notification[]
+}
+
+model UserRelationship {
+  id          String             @id @default(cuid())
+  followerId  String
+  followingId String
+  status      RelationshipStatus @default(FOLLOWING)
+  createdAt   DateTime           @default(now())
+  follower    User               @relation("FollowerRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User               @relation("FollowingRelation", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Conversation {
+  id            String                    @id @default(cuid())
+  type          ConversationType
+  groupName     String?
+  groupAvatar   String?
+  createdById   String
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  createdBy     User                      @relation("ConversationCreator", fields: [createdById], references: [id])
+  participants  ConversationParticipant[]
+  messages      Message[]
+}
+
+model ConversationParticipant {
+  id               String       @id @default(cuid())
+  conversationId   String
+  userId           String
+  role             ParticipantRole @default(MEMBER)
+  joinedAt         DateTime     @default(now())
+  lastReadMessageId String?
+  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  conversationId  String
+  senderId        String
+  content         String?
+  messageType     MessageType @default(TEXT)
+  mediaUrl        String?
+  reactions       Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt(sort: Desc)])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String
+  type           NotificationType
+  title          String
+  body           String
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  relatedUserId  String?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+}

@@ -1,0 +1,10 @@
+
+> desimedia@1.0.0 dev
+> next dev --port 3102
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3102
+- Network:       http://10.129.49.232:3102
+- Environments: .env
+✓ Ready in 826ms
+[?25h
